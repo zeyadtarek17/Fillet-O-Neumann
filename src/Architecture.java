@@ -3,17 +3,21 @@ import java.util.*;
 
 public class Architecture {
 
-	static Register[] registerFile = new Register[31];
-	// static int PCcounter = 0;
-	static Register zeroRegister;
-	static int pc;
-	static String[] memory = new String[2048]; //data are strings "12" while instructions are binary "1100"
-	// static final int data = 1024;
-	// static final int instruction = 1024;
-	static int instPtr = 0;
-	static int dataPtr = 1024;
+	 Register[] registerFile = new Register[31];
+	//  int PCcounter = 0;
+	 Register zeroRegister;
+	 int pc;
+	 String[] memory = new String[2048]; // data are strings "12" while instructions are binary "1100"
+	//  final int data = 1024;
+	//  final int instruction = 1024;
+	 int instPtr = 0;
+	 int dataPtr = 1024;
+	 int programInstructions;
+	//  Boolean read;
+	 Boolean write;
 
-	public static String complementFunc(String binary) {
+
+	public  String complementFunc(String binary) {
 		String OneComp = "";
 		for (int i = 0; i < binary.length(); i++) {
 			if (binary.charAt(i) == '0')
@@ -24,14 +28,7 @@ public class Architecture {
 		return OneComp;
 	}
 
-	public static void fetch() {
-		String instruction = memory[pc];
-		pc++;
-		decode(instruction);
-
-	}
-
-	public static String getBinary(int numOfBits, int num) {
+	public  String getBinary(int numOfBits, int num) {
 
 		String x = Integer.toBinaryString(num);
 		for (int i = 0; i < numOfBits - x.length(); i++) {
@@ -43,7 +40,7 @@ public class Architecture {
 		return x;
 	}
 
-	public static void encode() throws Exception {
+	public  void encode() throws Exception {
 		try {
 			File file = new File("MIPS.txt");
 			Scanner reader = new Scanner(file);
@@ -114,11 +111,10 @@ public class Architecture {
 						if (currentInstruction[i].contains("R")) {
 							String regNumber = currentInstruction[i].substring(1);
 							machineCode += getBinary(5, Integer.parseInt(regNumber));
-							machineCode += getBinary(18, Integer.parseInt(currentInstruction[i+1]));
+							machineCode += getBinary(18, Integer.parseInt(currentInstruction[i + 1]));
 							break;
-						} 
-							
-						
+						}
+
 					}
 					if (shamtFlag == false) {
 						machineCode += getBinary(13, 0);
@@ -144,13 +140,13 @@ public class Architecture {
 					machineCode = machineCode + getBinary(28, Integer.parseInt(currentInstruction[1]));
 				}
 
-				if(instPtr < 1024){
+				if (instPtr < 1024) {
 					memory[instPtr] = machineCode;
 					instPtr++;
-				}
-				else{
+				} else {
 					throw new Exception("Instruction memory overflow");
 				}
+				programInstructions++;
 			}
 			reader.close();
 		} catch (FileNotFoundException e) {
@@ -159,7 +155,15 @@ public class Architecture {
 
 	}
 
-	public static void decode(String instruction) {
+	public  String fetch() {
+		String instruction = memory[pc];
+		pc++;
+		return instruction;
+		// decode(instruction);
+
+	}
+
+	public  String[] decode(String instruction) {
 
 		String opCode = ""; // bits31:28
 		String r1 = ""; // bits27:23
@@ -168,16 +172,16 @@ public class Architecture {
 		String shamt = ""; // bits13:0
 		String imm = ""; // bits17:0
 		String address = ""; // bits27:0
-	    //char format =getFormat(opCode);
+		// char format =getFormat(opCode);
 		opCode = instruction.substring(0, 4);
 
-		opCode= instruction.substring(0,4);
-		r1= instruction.substring(4,9);
-		r2= instruction.substring(9,14);
-		r3= instruction.substring(14,19);
-		shamt= instruction.substring(19,32);
-		imm= instruction.substring(19,32);
-		address= instruction.substring(4,32);
+		opCode = instruction.substring(0, 4);
+		r1 = instruction.substring(4, 9);
+		r2 = instruction.substring(9, 14);
+		r3 = instruction.substring(14, 19);
+		shamt = instruction.substring(19, 32);
+		imm = instruction.substring(19, 32);
+		address = instruction.substring(4, 32);
 
 		String[] decoded = new String[6];
 		decoded[0] = opCode;
@@ -187,31 +191,22 @@ public class Architecture {
 		decoded[4] = shamt;
 		decoded[5] = imm;
 		decoded[6] = address;
-		execute(decoded);
-
-
-
-
-
+		return decoded;
 
 	}
 
-
-
-
-	public static char getFormat(String opCode){
-		if(opCode.equals("0000") || opCode.equals("0001") || opCode.equals("0010") || opCode.equals("0101")){
+	public  char getFormat(String opCode) {
+		if (opCode.equals("0000") || opCode.equals("0001") || opCode.equals("0010") || opCode.equals("0101")) {
 			return 'r';
-		}
-		else if(opCode.equals("1000") || opCode.equals("0100") || opCode.equals("0110") || opCode.equals("1010") || opCode.equals("1011") || opCode.equals("1001")){
+		} else if (opCode.equals("1000") || opCode.equals("0100") || opCode.equals("0110") || opCode.equals("1010")
+				|| opCode.equals("1011") || opCode.equals("1001")) {
 			return 'i';
-		}
-		else{
+		} else {
 			return 'j';
 		}
 	}
 
-	public static void execute(String []decoded) {
+	public  void execute(String[] decoded) {
 		String opCode = decoded[0];
 		String r1 = decoded[1];
 		String r2 = decoded[2];
@@ -219,68 +214,116 @@ public class Architecture {
 		String shamt = decoded[4];
 		String imm = decoded[5];
 		String address = decoded[6];
-		int r1Value = 0;
+		int r1Value = registerFile[Integer.parseInt(r1, 2)].getValue();
 		int r2Value = registerFile[Integer.parseInt(r2, 2)].getValue();
 		int r3Value = registerFile[Integer.parseInt(r3, 2)].getValue();
 
 
-		switch(opCode){
+		switch (opCode) {
 			case "0000":
+				// writeBack(registerFile[Integer.parseInt(r1, 2)],r3Value + r2Value );
 				r1Value = r3Value + r2Value;
 				registerFile[Integer.parseInt(r1, 2)].setValue(r1Value);
 				break;
-			case "0001": 
+			case "0001":
 				r1Value = r2Value - r3Value;
 				registerFile[Integer.parseInt(r1, 2)].setValue(r1Value);
 				break;
-			case "0010": 
+			case "0010":
 				r1Value = r3Value * r2Value;
 				registerFile[Integer.parseInt(r1, 2)].setValue(r1Value);
-				break;	
-			case "0011": 
+				break;
+			case "0011":
 				r1Value = Integer.parseInt(imm, 2);
 				registerFile[Integer.parseInt(r1, 2)].setValue(r1Value);
 				break;
-			case "0100": 
-			if(r1Value == r2Value){
-				pc+= +1 + Integer.parseInt(imm, 2);
-				
-			}
+			case "0100":
+				if (r1Value == r2Value) {
+					pc += +1 + Integer.parseInt(imm, 2);
+
+				}
 				break;
-			case "0101": 
+			case "0101":
 				r1Value = r3Value & r2Value;
 				registerFile[Integer.parseInt(r1, 2)].setValue(r1Value);
 				break;
-			case "0110": 
+			case "0110":
 				r1Value = r2Value ^ Integer.parseInt(imm, 2);
 				registerFile[Integer.parseInt(r1, 2)].setValue(r1Value);
 				break;
-			case "0111": 
+			case "0111":
 				pc += Integer.parseInt(address, 2);
 				break;
-			case "1000": 
+			case "1000":
 				r1Value = r2Value << Integer.parseInt(shamt, 2);
 				registerFile[Integer.parseInt(r1, 2)].setValue(r1Value);
 				break;
-			case "1001": 
+			case "1001":
 				r1Value = r1Value >> Integer.parseInt(shamt, 2);
 				registerFile[Integer.parseInt(r1, 2)].setValue(r1Value);
 				break;
-			case "1010": 
-				r1Value = Integer.parseInt(memory[r2Value + Integer.parseInt(imm, 2)]);
-				registerFile[Integer.parseInt(r1, 2)].setValue(r1Value);
+			case "1010":
+				r1Value =Integer.parseInt(mem(r2Value + Integer.parseInt(imm, 2), "", false));
+				write= false;
+				// r1Value = Integer.parseInt(memory[r2Value + Integer.parseInt(imm, 2)]);
+				// writeBack(registerFile[Integer.parseInt(r1, 2)], r1Value);
 				break;
-			case "1011": 
-				memory[r2Value + Integer.parseInt(imm, 2)] = r1Value+"";
+			case "1011":
+				mem(r2Value + Integer.parseInt(imm, 2), r1Value + "", true);
+				write= true;
+				// memory[r2Value + Integer.parseInt(imm, 2)] = r1Value+"";
 				break;
-			
-			default: 
+
+			default:
 				System.out.println("SYNTAX ERROR!");
 		}
 
 
+
+		
+
+
+		mem(r2Value + Integer.parseInt(imm, 2), "",false);
+		writeBack(registerFile[Integer.parseInt(r1, 2)],r1Value );
+
+
+
+
 	}
 
-	
+	public  void writeBack(Register r, int value) {
+		r.setValue(value);
+	}
+
+	public  String mem(int address, String value, Boolean write) {
+		if (write) {
+			memory[address] = value;
+		} else {
+			return memory[address];
+		}
+		return null;
+	}
+
+
+
+	public  void pipeLine() throws Exception{
+
+		encode();
+		String instruction= "";
+		int cycles= 7+ ((programInstructions-1)*2);
+		for(int i=0;i<cycles;i++){
+			ArrayList<String> running= new ArrayList<>();
+			if(i%2==0){
+				instruction = fetch();
+				running.add(instruction);
+				running.get(running.size()-4); //to be transferred from exec to wb
+				writeBack(zeroRegister, i);
+			}
+
+
+		}
+
+
+	}
 
 }

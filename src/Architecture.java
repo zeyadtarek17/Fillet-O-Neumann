@@ -1,23 +1,30 @@
 import java.io.*;
 import java.util.*;
 
+import javax.print.attribute.standard.Destination;
+
 public class Architecture {
 
-	 Register[] registerFile = new Register[31];
-	//  int PCcounter = 0;
-	 Register zeroRegister;
-	 int pc;
-	 String[] memory = new String[2048]; // data are strings "12" while instructions are binary "1100"
-	//  final int data = 1024;
-	//  final int instruction = 1024;
-	 int instPtr = 0;
-	 int dataPtr = 1024;
-	 int programInstructions;
-	//  Boolean read;
-	 Boolean write;
+	Register[] registerFile = new Register[31];
+	// int PCcounter = 0;
+	Register zeroRegister;
+	Register destinationRegister;
+	int pc;
+	String[] memory = new String[2048]; // data are strings "12" while instructions are binary "1100"
+	// final int data = 1024;
+	// final int instruction = 1024;
+	int instPtr = 0;
+	int dataPtr = 1024;
+	int programInstructions;
+	// Boolean read;
+	Boolean write;
+	boolean memRead;
+	int memReadAddress;
+	int writeBackValue;
+	String instruction;
+	String[] decoded;
 
-
-	public  String complementFunc(String binary) {
+	public String complementFunc(String binary) {
 		String OneComp = "";
 		for (int i = 0; i < binary.length(); i++) {
 			if (binary.charAt(i) == '0')
@@ -28,7 +35,7 @@ public class Architecture {
 		return OneComp;
 	}
 
-	public  String getBinary(int numOfBits, int num) {
+	public String getBinary(int numOfBits, int num) {
 
 		String x = Integer.toBinaryString(num);
 		for (int i = 0; i < numOfBits - x.length(); i++) {
@@ -40,7 +47,7 @@ public class Architecture {
 		return x;
 	}
 
-	public  void encode() throws Exception {
+	public void encode() throws Exception {
 		try {
 			File file = new File("MIPS.txt");
 			Scanner reader = new Scanner(file);
@@ -155,7 +162,7 @@ public class Architecture {
 
 	}
 
-	public  String fetch() {
+	public String fetch() {
 		String instruction = memory[pc];
 		pc++;
 		return instruction;
@@ -163,7 +170,7 @@ public class Architecture {
 
 	}
 
-	public  String[] decode(String instruction) {
+	public String[] decode(String instruction) {
 
 		String opCode = ""; // bits31:28
 		String r1 = ""; // bits27:23
@@ -195,7 +202,7 @@ public class Architecture {
 
 	}
 
-	public  char getFormat(String opCode) {
+	public char getFormat(String opCode) {
 		if (opCode.equals("0000") || opCode.equals("0001") || opCode.equals("0010") || opCode.equals("0101")) {
 			return 'r';
 		} else if (opCode.equals("1000") || opCode.equals("0100") || opCode.equals("0110") || opCode.equals("1010")
@@ -206,7 +213,7 @@ public class Architecture {
 		}
 	}
 
-	public  void execute(String[] decoded) {
+	public void execute(String[] decoded) {
 		String opCode = decoded[0];
 		String r1 = decoded[1];
 		String r2 = decoded[2];
@@ -218,112 +225,114 @@ public class Architecture {
 		int r2Value = registerFile[Integer.parseInt(r2, 2)].getValue();
 		int r3Value = registerFile[Integer.parseInt(r3, 2)].getValue();
 
-
 		switch (opCode) {
 			case "0000":
 				// writeBack(registerFile[Integer.parseInt(r1, 2)],r3Value + r2Value );
-				r1Value = r3Value + r2Value;
-				registerFile[Integer.parseInt(r1, 2)].setValue(r1Value);
+				writeBackValue = r3Value + r2Value;
+				// registerFile[Integer.parseInt(r1, 2)].setValue(r1Value);
+				destinationRegister = registerFile[1];
+				write = true;
 				break;
 			case "0001":
-				r1Value = r2Value - r3Value;
-				registerFile[Integer.parseInt(r1, 2)].setValue(r1Value);
+				writeBackValue = r2Value - r3Value;
+				// registerFile[Integer.parseInt(r1, 2)].setValue(r1Value);
+				destinationRegister = registerFile[1];
+				write = true;
 				break;
 			case "0010":
-				r1Value = r3Value * r2Value;
-				registerFile[Integer.parseInt(r1, 2)].setValue(r1Value);
+				writeBackValue = r3Value * r2Value;
+				// registerFile[Integer.parseInt(r1, 2)].setValue(r1Value);
+				destinationRegister = registerFile[1];
 				break;
 			case "0011":
-				r1Value = Integer.parseInt(imm, 2);
-				registerFile[Integer.parseInt(r1, 2)].setValue(r1Value);
+				writeBackValue = Integer.parseInt(imm, 2);
+				// registerFile[Integer.parseInt(r1, 2)].setValue(r1Value);
+				destinationRegister = registerFile[1];
 				break;
 			case "0100":
 				if (r1Value == r2Value) {
 					pc += +1 + Integer.parseInt(imm, 2);
-
 				}
 				break;
 			case "0101":
-				r1Value = r3Value & r2Value;
-				registerFile[Integer.parseInt(r1, 2)].setValue(r1Value);
+				writeBackValue = r3Value & r2Value;
+				// registerFile[Integer.parseInt(r1, 2)].setValue(r1Value);
+				destinationRegister = registerFile[1];
 				break;
 			case "0110":
-				r1Value = r2Value ^ Integer.parseInt(imm, 2);
-				registerFile[Integer.parseInt(r1, 2)].setValue(r1Value);
+				writeBackValue = r2Value ^ Integer.parseInt(imm, 2);
+				// registerFile[Integer.parseInt(r1, 2)].setValue(r1Value);
+				destinationRegister = registerFile[1];
 				break;
 			case "0111":
 				pc += Integer.parseInt(address, 2);
 				break;
 			case "1000":
-				r1Value = r2Value << Integer.parseInt(shamt, 2);
-				registerFile[Integer.parseInt(r1, 2)].setValue(r1Value);
+				writeBackValue = r2Value << Integer.parseInt(shamt, 2);
+				// registerFile[Integer.parseInt(r1, 2)].setValue(r1Value);
+				destinationRegister = registerFile[1];
 				break;
 			case "1001":
-				r1Value = r1Value >> Integer.parseInt(shamt, 2);
-				registerFile[Integer.parseInt(r1, 2)].setValue(r1Value);
+				writeBackValue = r1Value >> Integer.parseInt(shamt, 2);
+				// registerFile[Integer.parseInt(r1, 2)].setValue(r1Value);
+				destinationRegister = registerFile[1];
 				break;
 			case "1010":
-				r1Value =Integer.parseInt(mem(r2Value + Integer.parseInt(imm, 2), "", false));
-				write= false;
+				memReadAddress = r2Value + Integer.parseInt(imm, 2);
+				write = true;
+				memRead = true;
+				destinationRegister = registerFile[1];
 				// r1Value = Integer.parseInt(memory[r2Value + Integer.parseInt(imm, 2)]);
 				// writeBack(registerFile[Integer.parseInt(r1, 2)], r1Value);
 				break;
 			case "1011":
-				mem(r2Value + Integer.parseInt(imm, 2), r1Value + "", true);
-				write= true;
+				writeBackValue = r1Value;
+				memReadAddress = r2Value + Integer.parseInt(imm, 2);
+				write = false;
+				memRead = true;
 				// memory[r2Value + Integer.parseInt(imm, 2)] = r1Value+"";
 				break;
 
 			default:
 				System.out.println("SYNTAX ERROR!");
 		}
-
-
-
-		
-
-
-		mem(r2Value + Integer.parseInt(imm, 2), "",false);
-		writeBack(registerFile[Integer.parseInt(r1, 2)],r1Value );
-
-
-
-
+		// mem(r2Value + Integer.parseInt(imm, 2), "",false);
+		// writeBack(registerFile[Integer.parseInt(r1, 2)],r1Value );
 	}
 
-	public  void writeBack(Register r, int value) {
-		r.setValue(value);
-	}
-
-	public  String mem(int address, String value, Boolean write) {
+	public void writeBack() {
 		if (write) {
-			memory[address] = value;
-		} else {
-			return memory[address];
-		}
-		return null;
+			destinationRegister.setValue(writeBackValue);
+		} else
+			return;
+
 	}
 
+	public void mem() {
+		if (memRead) {
+			writeBackValue = Integer.parseInt(memory[memReadAddress]);
+		}
+		if (memRead && !write) {
+			memory[memReadAddress] = writeBackValue + "";
+		} else
+			return;
+	}
 
-
-	public  void pipeLine() throws Exception{
+	public void pipeLine() throws Exception {
 
 		encode();
-		String instruction= "";
-		int cycles= 7+ ((programInstructions-1)*2);
-		for(int i=0;i<cycles;i++){
-			ArrayList<String> running= new ArrayList<>();
-			if(i%2==0){
+		String instruction = "";
+		int cycles = 7 + ((programInstructions - 1) * 2);
+		for (int i = 0; i < cycles; i++) {
+			
+			if (i % 2 != 0) {
+				writeBack();
+				execute(decoded);
+				decoded = decode(instruction);
+			} else {
+				mem();
 				instruction = fetch();
-				running.add(instruction);
-				running.get(running.size()-4); //to be transferred from exec to wb
-				writeBack(zeroRegister, i);
 			}
-
-
 		}
-
-
 	}
-
 }

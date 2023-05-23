@@ -1,7 +1,7 @@
 public class Register {
 
     private int value;
-    private String name;
+    
 
     public Register() {
         this.value = 0;

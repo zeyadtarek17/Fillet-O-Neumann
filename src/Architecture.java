@@ -5,9 +5,9 @@ import javax.print.attribute.standard.Destination;
 
 public class Architecture {
 
-	Register[] registerFile = new Register[31];
+	Register[] registerFile = new Register[32];
 	// int PCcounter = 0;
-	Register zeroRegister;
+	
 	Register destinationRegister;
 	int pc;
 	String[] memory = new String[2048]; // data are strings "12" while instructions are binary "1100"
@@ -17,12 +17,20 @@ public class Architecture {
 	int dataPtr = 1024;
 	int programInstructions;
 	// Boolean read;
-	Boolean write;
-	boolean memRead;
+	Boolean write=true;
+	boolean memRead=false;
 	int memReadAddress;
 	int writeBackValue;
 	String instruction;
 	String[] decoded;
+	ArrayList<String>running= new ArrayList<>();
+
+
+	public Architecture(){
+		for(int i=0;i<32;i++){
+			registerFile[i]= new Register(0);
+		}
+	}
 
 	public String complementFunc(String binary) {
 		String OneComp = "";
@@ -38,11 +46,16 @@ public class Architecture {
 	public String getBinary(int numOfBits, int num) {
 
 		String x = Integer.toBinaryString(num);
-		for (int i = 0; i < numOfBits - x.length(); i++) {
-			if (x.charAt(0) == '0')
-				x = "0" + x;
-			else
+		int size= x.length();
+		
+		for (int i = 0; i < numOfBits - size; i++) {
+			if(num>=0){
+			x = "0" + x;
+			}
+			else{
 				x = "1" + x;
+
+			}
 		}
 		return x;
 	}
@@ -114,18 +127,27 @@ public class Architecture {
 						System.out.println("SYNTAX ERROR!");
 				}
 				if (format == 'r') {
+					
 					for (int i = 1; i < currentInstruction.length; i++) {
 						if (currentInstruction[i].contains("R")) {
 							String regNumber = currentInstruction[i].substring(1);
+							// System.out.println(currentInstruction[i + 1].substring(1));
 							machineCode += getBinary(5, Integer.parseInt(regNumber));
-							machineCode += getBinary(18, Integer.parseInt(currentInstruction[i + 1]));
+							machineCode += getBinary(5, Integer.parseInt(currentInstruction[i + 1].substring(1)));
+							if(currentInstruction[i + 2].contains("R")){
+								machineCode += getBinary(5, Integer.parseInt(currentInstruction[i + 2].substring(1)));
+								machineCode += getBinary(13, 0);
+							}
+							
+							else{
+								machineCode += getBinary(5, 0);
+								machineCode += getBinary(13, Integer.parseInt(currentInstruction[i + 2]));
+							}
 							break;
 						}
 
 					}
-					if (shamtFlag == false) {
-						machineCode += getBinary(13, 0);
-					}
+					
 
 				} else if (format == 'i') {
 					for (int i = 1; i < currentInstruction.length; i++) {
@@ -133,18 +155,23 @@ public class Architecture {
 
 							String num = currentInstruction[i].substring(1);
 							machineCode = machineCode + getBinary(5, Integer.parseInt(num));
+							machineCode = machineCode + getBinary(5, Integer.parseInt(currentInstruction[i + 1].substring(1)));
+							machineCode = machineCode + getBinary(18, Integer.parseInt(currentInstruction[i + 2]));
+							break;
 
 						} else if (currentInstruction[0].equalsIgnoreCase("movi")) {
 							machineCode += getBinary(5, Integer.parseInt(currentInstruction[1].substring(1)));
 							machineCode += getBinary(5, 0);
-							machineCode += getBinary(18, Integer.parseInt(currentInstruction[i]));
+							machineCode += getBinary(18, Integer.parseInt(currentInstruction[2]));
+							break;
 
-						} else {
-							machineCode += getBinary(18, Integer.parseInt(currentInstruction[i]));
-						}
+						} 
 					}
 				} else {// format = j
 					machineCode = machineCode + getBinary(28, Integer.parseInt(currentInstruction[1]));
+					if(Integer.parseInt(currentInstruction[1])>=1024){
+						throw new Exception("Address out of range");
+					}
 				}
 
 				if (instPtr < 1024) {
@@ -165,12 +192,20 @@ public class Architecture {
 	public String fetch() {
 		String instruction = memory[pc];
 		pc++;
+		if(instruction==null){
+			return null;
+		}
 		return instruction;
+		
 		// decode(instruction);
 
 	}
 
-	public String[] decode(String instruction) {
+	public String[] decode(String instruction) throws Exception {
+
+		if(instruction.isEmpty()){
+			return null;
+		}
 
 		String opCode = ""; // bits31:28
 		String r1 = ""; // bits27:23
@@ -180,6 +215,8 @@ public class Architecture {
 		String imm = ""; // bits17:0
 		String address = ""; // bits27:0
 		// char format =getFormat(opCode);
+
+		
 		opCode = instruction.substring(0, 4);
 
 		opCode = instruction.substring(0, 4);
@@ -190,7 +227,7 @@ public class Architecture {
 		imm = instruction.substring(19, 32);
 		address = instruction.substring(4, 32);
 
-		String[] decoded = new String[6];
+		String[] decoded = new String[7];
 		decoded[0] = opCode;
 		decoded[1] = r1;
 		decoded[2] = r2;
@@ -214,6 +251,10 @@ public class Architecture {
 	}
 
 	public void execute(String[] decoded) {
+
+		if(decoded==null){
+			return ;
+		}
 		String opCode = decoded[0];
 		String r1 = decoded[1];
 		String r2 = decoded[2];
@@ -221,6 +262,7 @@ public class Architecture {
 		String shamt = decoded[4];
 		String imm = decoded[5];
 		String address = decoded[6];
+		Register dest= registerFile[Integer.parseInt(r1,2)];
 		int r1Value = registerFile[Integer.parseInt(r1, 2)].getValue();
 		int r2Value = registerFile[Integer.parseInt(r2, 2)].getValue();
 		int r3Value = registerFile[Integer.parseInt(r3, 2)].getValue();
@@ -230,39 +272,39 @@ public class Architecture {
 				// writeBack(registerFile[Integer.parseInt(r1, 2)],r3Value + r2Value );
 				writeBackValue = r3Value + r2Value;
 				// registerFile[Integer.parseInt(r1, 2)].setValue(r1Value);
-				destinationRegister = registerFile[1];
+				destinationRegister = dest;
 				write = true;
 				break;
 			case "0001":
 				writeBackValue = r2Value - r3Value;
 				// registerFile[Integer.parseInt(r1, 2)].setValue(r1Value);
-				destinationRegister = registerFile[1];
+				destinationRegister = dest;
 				write = true;
 				break;
 			case "0010":
 				writeBackValue = r3Value * r2Value;
 				// registerFile[Integer.parseInt(r1, 2)].setValue(r1Value);
-				destinationRegister = registerFile[1];
+				destinationRegister = dest;
 				break;
 			case "0011":
 				writeBackValue = Integer.parseInt(imm, 2);
 				// registerFile[Integer.parseInt(r1, 2)].setValue(r1Value);
-				destinationRegister = registerFile[1];
+				destinationRegister = dest;
 				break;
 			case "0100":
 				if (r1Value == r2Value) {
-					pc += +1 + Integer.parseInt(imm, 2);
+					pc += 1 + Integer.parseInt(imm, 2);
 				}
 				break;
 			case "0101":
 				writeBackValue = r3Value & r2Value;
 				// registerFile[Integer.parseInt(r1, 2)].setValue(r1Value);
-				destinationRegister = registerFile[1];
+				destinationRegister = dest;
 				break;
 			case "0110":
 				writeBackValue = r2Value ^ Integer.parseInt(imm, 2);
 				// registerFile[Integer.parseInt(r1, 2)].setValue(r1Value);
-				destinationRegister = registerFile[1];
+				destinationRegister = dest;
 				break;
 			case "0111":
 				pc += Integer.parseInt(address, 2);
@@ -270,18 +312,18 @@ public class Architecture {
 			case "1000":
 				writeBackValue = r2Value << Integer.parseInt(shamt, 2);
 				// registerFile[Integer.parseInt(r1, 2)].setValue(r1Value);
-				destinationRegister = registerFile[1];
+				destinationRegister = dest;
 				break;
 			case "1001":
 				writeBackValue = r1Value >> Integer.parseInt(shamt, 2);
 				// registerFile[Integer.parseInt(r1, 2)].setValue(r1Value);
-				destinationRegister = registerFile[1];
+				destinationRegister = dest;
 				break;
 			case "1010":
 				memReadAddress = r2Value + Integer.parseInt(imm, 2);
-				write = true;
+				// write = true;
 				memRead = true;
-				destinationRegister = registerFile[1];
+				destinationRegister = dest;
 				// r1Value = Integer.parseInt(memory[r2Value + Integer.parseInt(imm, 2)]);
 				// writeBack(registerFile[Integer.parseInt(r1, 2)], r1Value);
 				break;
@@ -301,8 +343,9 @@ public class Architecture {
 	}
 
 	public void writeBack() {
-		if (write) {
+		if (write  && destinationRegister!=null) {
 			destinationRegister.setValue(writeBackValue);
+
 		} else
 			return;
 
@@ -321,18 +364,40 @@ public class Architecture {
 	public void pipeLine() throws Exception {
 
 		encode();
-		String instruction = "";
+		String temp = "";
+		String check="";
 		int cycles = 7 + ((programInstructions - 1) * 2);
-		for (int i = 0; i < cycles; i++) {
+		for (int i = 1; i < cycles+1; i++) {
 			
-			if (i % 2 != 0) {
-				writeBack();
-				execute(decoded);
-				decoded = decode(instruction);
-			} else {
+			if (i % 2 == 0) {
 				mem();
-				instruction = fetch();
+			} else {
+				writeBack();
+				// if(destinationRegister!=null){
+				// 	System.out.println(destinationRegister.getValue());
+				// }
+				execute(decoded);
+				decoded = decode(temp);
+				check=fetch();
+				if(check!=null && check!=""){
+					temp=check;
+				}
+				
+				// System.out.println(temp);
 			}
 		}
+	}
+
+	public static void main(String[] args) throws Exception {
+		Architecture arch= new Architecture();
+		arch.registerFile[2].setValue(5);
+		arch.registerFile[3].setValue(3);
+		arch.registerFile[4].setValue(2);
+		arch.pipeLine();
+		System.out.println(arch.registerFile[1].getValue());
+		System.out.println(arch.registerFile[5].getValue());
+
+		
+		
 	}
 }

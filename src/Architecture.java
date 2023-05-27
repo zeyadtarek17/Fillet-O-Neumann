@@ -404,7 +404,19 @@ public class Architecture {
 					mem();
 				} else {
 					writeBack();
+					System.out.println("Writing back " +writeBackValue);
 					execute(decoded);
+					System.out.println("Executing:");
+					if(decoded!=null){
+						for(int j=0;j<decoded.length;j++){
+							System.out.println(decoded[j]);
+						
+						}
+					}
+					else{
+						System.out.println(" nothing");
+
+					}
 					if (!jeqCheck && !jump) {
 						decoded = decode(temp);
 						check = fetch();
@@ -415,32 +427,28 @@ public class Architecture {
 						check = fetch();
 					}
 
+					
 				}
 				System.out.println("Fetch: " + check);
+				System.out.println("Decoding:");
+
+				if(decoded!=null){
+					for(int j=0;j<decoded.length;j++){
+						System.out.println(decoded[j]);
+
+						
+					}
+				}
+				else{
+					System.out.println(" nothing");
+				}
+				
 			}
 
 			if (check != null && check != "") {
 				temp = check;
 			}
-			// if(check == null && pc>programInstructions+2 && jeq) {
-			// break;
-			// }
-			// if (checkControlHazard(temp) && !checkHazard) {
-			// System.out.println("Control Hazard " + temp);
-			// checkHazard = true;
-			// continue;
-			// }
-			// if (checkHazard) {
-			// checkHazard = false;
-			// System.out.println("Control Hazard 2 " + temp);
-			// // decoded = decode(temp);
-			// writeBack();
-			// execute(decoded);
-			// decoded = decode(temp);
-			// if (memory[pc] == null)
-			// throw new Exception("Instruction memory overflow");
-			// continue;
-			// }
+			
 		}
 	}
 
@@ -467,17 +475,6 @@ public class Architecture {
 		arch.registerFile[3].setValue(5);
 		arch.registerFile[4].setValue(2);
 		arch.registerFile[5].setValue(2);
-		// System.out.println(arch.registerFile[5].getValue());
-
-		// arch.executeInstruction();
-		// System.out.println(arch.pc);
-		// arch.executeInstruction();
-		// System.out.println(arch.pc);
-		// arch.executeInstruction();
-		// System.out.println(arch.pc);
-		// arch.executeInstruction();
-		// System.out.println(arch.pc);
-		// arch.executeInstruction();
 
 		arch.pipeLine();
 		// System.out.println(arch.registerFile[1].getValue());

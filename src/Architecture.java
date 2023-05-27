@@ -324,7 +324,7 @@ public class Architecture {
 				if (Integer.parseInt(address, 2) >= 1024) {
 					throw new Exception("Address out of range");
 				}
-				if (Integer.parseInt(address, 2) < 0) {
+				if (Integer.parseInt(address, 2) <= pc) {
 					cyclesShift = 0;
 				} else {
 					cyclesShift = (pc - ((Integer.parseInt(imm, 2) - 1))) * 2;

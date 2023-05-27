@@ -2,5 +2,6 @@ jmp 4
 add R1 R1 R2
 add R3 R3 R5
 add R3 R5 R3
-add R5 R5 R3
-add R5 R5 R3
+add R5 R5 R1
+add R3 R5 R3
+add R2 R5 R3

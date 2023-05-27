@@ -312,10 +312,10 @@ public class Architecture {
 				break;
 			case "0111":
 				System.out.println("JUMP" + Integer.parseInt(address, 2));
-				// get 4 bits of pc and concatenate with address
 				String temp = getBinary(32, pc);
 				pc = Integer.parseInt(temp.substring(0, 4) + address, 2);
-				cyclesShift = pc - ((Integer.parseInt(imm, 2) - 1) * 2);
+				cyclesShift = (pc - ((Integer.parseInt(imm, 2) - 1))) * 2;
+				System.out.println("cyclesShift" + cyclesShift);
 				jump = true;
 				break;
 			case "1000":
@@ -392,11 +392,12 @@ public class Architecture {
 				} else {
 					writeBack();
 					execute(decoded);
-					if (!jeqCheck) {
+					if (!jeqCheck && !jump) {
 						decoded = decode(temp);
 						check = fetch();
 					} else {
 						jeqCheck = false;
+						jump = false;
 						decoded = null;
 						check = fetch();
 					}
@@ -411,29 +412,22 @@ public class Architecture {
 			// if(check == null && pc>programInstructions+2 && jeq) {
 			// break;
 			// }
-
-			if (check == null && pc > programInstructions + 1 && jump) {
-				break;
-			}
-
-			if (checkControlHazard(temp) && !checkHazard) {
-				System.out.println("Control Hazard " + temp);
-				checkHazard = true;
-				continue;
-			}
-
-			if (checkHazard) {
-				checkHazard = false;
-				System.out.println("Control Hazard 2 " + temp);
-				// decoded = decode(temp);
-				writeBack();
-				execute(decoded);
-				decoded = decode(temp);
-				if (memory[pc] == null)
-					throw new Exception("Instruction memory overflow");
-				continue;
-			}
-
+			// if (checkControlHazard(temp) && !checkHazard) {
+			// System.out.println("Control Hazard " + temp);
+			// checkHazard = true;
+			// continue;
+			// }
+			// if (checkHazard) {
+			// checkHazard = false;
+			// System.out.println("Control Hazard 2 " + temp);
+			// // decoded = decode(temp);
+			// writeBack();
+			// execute(decoded);
+			// decoded = decode(temp);
+			// if (memory[pc] == null)
+			// throw new Exception("Instruction memory overflow");
+			// continue;
+			// }
 		}
 	}
 

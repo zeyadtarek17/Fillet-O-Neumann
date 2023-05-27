@@ -28,7 +28,7 @@ public class Architecture {
 	public Architecture() throws Exception {
 
 		for (int i = 0; i < 32; i++) {
-			registerFile[i] = new Register(0);
+			registerFile[i] = new Register();
 		}
 		encode();
 	}
@@ -404,7 +404,10 @@ public class Architecture {
 					mem();
 				} else {
 					writeBack();
-					System.out.println("Writing back " +writeBackValue);
+					if(destinationRegister!=null){
+						System.out.println("Writing back " +writeBackValue +" to "+destinationRegister.name);
+
+					}
 					execute(decoded);
 					System.out.println("Executing:");
 					if(decoded!=null){
@@ -450,6 +453,24 @@ public class Architecture {
 			}
 			
 		}
+		System.out.println("memory instructions:");
+		for(int i=0;i<1024;i++){
+			if(memory[i]==null){
+				break;
+			}
+			System.out.println(memory[i]);
+		}
+
+		System.out.println("memory data:");
+
+		for(int i=1024;i<2048;i++){
+			if(memory[i]==null){
+				break;
+			}
+			System.out.println(memory[i]);
+		}
+
+
 	}
 
 	private boolean checkControlHazard(String instruction) {
@@ -470,17 +491,16 @@ public class Architecture {
 
 	public static void main(String[] args) throws Exception {
 		Architecture arch = new Architecture();
-		arch.registerFile[1].setValue(5);
-		arch.registerFile[2].setValue(5);
-		arch.registerFile[3].setValue(5);
-		arch.registerFile[4].setValue(2);
-		arch.registerFile[5].setValue(2);
+		// arch.registerFile[1].setValue(5);
+		// arch.registerFile[2].setValue(5);
+		// arch.registerFile[3].setValue(5);
+		// arch.registerFile[4].setValue(2);
+		// arch.registerFile[5].setValue(2);
 
 		arch.pipeLine();
 		// System.out.println(arch.registerFile[1].getValue());
-		System.out.println(arch.registerFile[1].getValue());
-		System.out.println(arch.registerFile[3].getValue());
-		System.out.println(arch.registerFile[5].getValue());
+		// System.out.println(arch.registerFile[3].getValue());
+		// System.out.println(arch.registerFile[5].getValue());
 		// System.out.println(arch.registerFile[6].getValue());
 
 	}

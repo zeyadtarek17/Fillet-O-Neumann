@@ -1,6 +1,7 @@
-jmp 4
+jmp 3
 add R1 R1 R2
 add R3 R3 R5
+jmp 1
 add R3 R5 R3
 add R5 R5 R1
 add R3 R5 R3

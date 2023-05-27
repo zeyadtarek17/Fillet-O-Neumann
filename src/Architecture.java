@@ -249,7 +249,7 @@ public class Architecture {
 		}
 	}
 
-	public void execute(String[] decoded) {
+	public void execute(String[] decoded) throws Exception {
 
 		if (decoded == null) {
 			return;
@@ -294,7 +294,14 @@ public class Architecture {
 			case "0100":
 				if (r1Value == r2Value) {
 					pc = pc + Integer.parseInt(imm, 2) - 1;
-					cyclesShift = ((Integer.parseInt(imm, 2) - 1) * 2);
+					if (Integer.parseInt(address, 2) >= 1024) {
+						throw new Exception("Address out of range");
+					}
+					if (Integer.parseInt(address, 2) < 0) {
+						cyclesShift = 0;
+					} else {
+						cyclesShift = (pc - ((Integer.parseInt(imm, 2) - 1))) * 2;
+					}
 					jeqCheck = true;
 					jeq = true;
 				}
@@ -314,8 +321,14 @@ public class Architecture {
 				System.out.println("JUMP" + Integer.parseInt(address, 2));
 				String temp = getBinary(32, pc);
 				pc = Integer.parseInt(temp.substring(0, 4) + address, 2);
-				cyclesShift = (pc - ((Integer.parseInt(imm, 2) - 1))) * 2;
-				System.out.println("cyclesShift" + cyclesShift);
+				if (Integer.parseInt(address, 2) >= 1024) {
+					throw new Exception("Address out of range");
+				}
+				if (Integer.parseInt(address, 2) < 0) {
+					cyclesShift = 0;
+				} else {
+					cyclesShift = (pc - ((Integer.parseInt(imm, 2) - 1))) * 2;
+				}
 				jump = true;
 				break;
 			case "1000":
@@ -381,7 +394,7 @@ public class Architecture {
 			System.out.println("Cycle " + i + ":" + "PC=" + pc);
 			System.out.println("Current " + pc);
 
-			if (cyclesShift != 0) {
+			if (cyclesShift == 0) {
 				cycles -= cyclesShift;
 				cyclesShift = 0;
 			}
@@ -469,7 +482,6 @@ public class Architecture {
 		arch.pipeLine();
 		// System.out.println(arch.registerFile[1].getValue());
 		System.out.println(arch.registerFile[1].getValue());
-
 		System.out.println(arch.registerFile[3].getValue());
 		System.out.println(arch.registerFile[5].getValue());
 		// System.out.println(arch.registerFile[6].getValue());

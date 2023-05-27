@@ -20,6 +20,10 @@ public class Architecture {
 	String instruction;
 	String[] decoded;
 	ArrayList<String> running = new ArrayList<>();
+	boolean jeqCheck;
+	boolean jeq;
+	boolean jump;
+	int cyclesShift;
 
 	public Architecture() throws Exception {
 
@@ -145,7 +149,7 @@ public class Architecture {
 
 				} else if (format == 'i') {
 					for (int i = 1; i < currentInstruction.length; i++) {
-						if (currentInstruction[i].contains("R") && currentInstruction[0].equals("movi")) {
+						if (currentInstruction[i].contains("R") && !currentInstruction[0].equals("movi")) {
 
 							String num = currentInstruction[i].substring(1);
 							machineCode = machineCode + getBinary(5, Integer.parseInt(num));
@@ -163,6 +167,7 @@ public class Architecture {
 						}
 					}
 				} else {// format = j
+
 					machineCode = machineCode + getBinary(28, Integer.parseInt(currentInstruction[1]));
 					if (Integer.parseInt(currentInstruction[1]) >= 1024) {
 						throw new Exception("Address out of range");
@@ -249,6 +254,7 @@ public class Architecture {
 		if (decoded == null) {
 			return;
 		}
+
 		String opCode = decoded[0];
 		String r1 = decoded[1];
 		String r2 = decoded[2];
@@ -287,8 +293,12 @@ public class Architecture {
 				break;
 			case "0100":
 				if (r1Value == r2Value) {
-					pc += 1 + Integer.parseInt(imm, 2);
+					pc = pc + Integer.parseInt(imm, 2) - 1;
+					cyclesShift = ((Integer.parseInt(imm, 2) - 1) * 2);
+					jeqCheck = true;
+					jeq = true;
 				}
+
 				break;
 			case "0101":
 				writeBackValue = r3Value & r2Value;
@@ -305,6 +315,8 @@ public class Architecture {
 				// get 4 bits of pc and concatenate with address
 				String temp = getBinary(32, pc);
 				pc = Integer.parseInt(temp.substring(0, 4) + address, 2);
+				cyclesShift = pc - ((Integer.parseInt(imm, 2) - 1) * 2);
+				jump = true;
 				break;
 			case "1000":
 				writeBackValue = r2Value << Integer.parseInt(shamt, 2);
@@ -367,7 +379,12 @@ public class Architecture {
 		for (int i = 1; i < cycles + 1; i++) {
 
 			System.out.println("Cycle " + i + ":" + "PC=" + pc);
-			System.out.println(registerFile[5].getValue());
+			System.out.println("Current " + pc);
+
+			if (cyclesShift != 0) {
+				cycles -= cyclesShift;
+				cyclesShift = 0;
+			}
 
 			if (!checkHazard) {
 				if (i % 2 == 0) {
@@ -375,31 +392,43 @@ public class Architecture {
 				} else {
 					writeBack();
 					execute(decoded);
-					decoded = decode(temp);
-					check = fetch();
+					if (!jeqCheck) {
+						decoded = decode(temp);
+						check = fetch();
+					} else {
+						jeqCheck = false;
+						decoded = null;
+						check = fetch();
+					}
+
 				}
 				System.out.println("Fetch: " + check);
 			}
-			
+
 			if (check != null && check != "") {
 				temp = check;
 			}
-			if(check == null && pc>programInstructions+1) {
+			// if(check == null && pc>programInstructions+2 && jeq) {
+			// break;
+			// }
+
+			if (check == null && pc > programInstructions + 1 && jump) {
 				break;
 			}
+
 			if (checkControlHazard(temp) && !checkHazard) {
-				System.out.println("Control Hazard" + temp);
-				writeBack();
-				execute(decoded);
-				decoded = decode(temp);
+				System.out.println("Control Hazard " + temp);
 				checkHazard = true;
 				continue;
 			}
+
 			if (checkHazard) {
 				checkHazard = false;
-				System.out.println("Control Hazard 2" + temp);
-				decoded = decode(temp);
+				System.out.println("Control Hazard 2 " + temp);
+				// decoded = decode(temp);
+				writeBack();
 				execute(decoded);
+				decoded = decode(temp);
 				if (memory[pc] == null)
 					throw new Exception("Instruction memory overflow");
 				continue;
@@ -410,7 +439,7 @@ public class Architecture {
 
 	private boolean checkControlHazard(String instruction) {
 		String opCode = instruction.substring(0, 4);
-		if (opCode.equals("0100") || opCode.equals("0111")) {
+		if (opCode.equals("0111")) {
 			return true;
 		}
 		return false;
@@ -431,7 +460,7 @@ public class Architecture {
 		arch.registerFile[3].setValue(5);
 		arch.registerFile[4].setValue(2);
 		arch.registerFile[5].setValue(2);
-		System.out.println(arch.registerFile[5].getValue());
+		// System.out.println(arch.registerFile[5].getValue());
 
 		// arch.executeInstruction();
 		// System.out.println(arch.pc);
@@ -444,9 +473,12 @@ public class Architecture {
 		// arch.executeInstruction();
 
 		arch.pipeLine();
+		// System.out.println(arch.registerFile[1].getValue());
 		System.out.println(arch.registerFile[1].getValue());
+
+		System.out.println(arch.registerFile[3].getValue());
 		System.out.println(arch.registerFile[5].getValue());
-		System.out.println(arch.registerFile[6].getValue());
+		// System.out.println(arch.registerFile[6].getValue());
 
 	}
 }

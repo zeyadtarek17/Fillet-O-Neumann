@@ -1,8 +1,6 @@
-mul R1 R2 R3
-MOVI R6 8
-jmp 6
-add R3 R1 R4
-add R3 R5 R6
+jmp 4
+add R1 R1 R2
+add R3 R3 R5
 add R3 R5 R3
 add R5 R5 R3
 add R5 R5 R3
